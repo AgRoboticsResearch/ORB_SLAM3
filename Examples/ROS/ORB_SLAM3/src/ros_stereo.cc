@@ -17,22 +17,25 @@
 */
 
 
-#include<iostream>
-#include<algorithm>
-#include<fstream>
-#include<chrono>
+#include <iostream>
+#include <algorithm>
+#include <fstream>
+#include <chrono>
 
-#include<ros/ros.h>
+#include <ros/ros.h>
 #include <cv_bridge/cv_bridge.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
+#include <geometry_msgs/PoseStamped.h>
 
-#include<opencv2/core/core.hpp>
+#include <opencv2/core/core.hpp>
 
 #include"../../../include/System.h"
 
 using namespace std;
+
+ros::Publisher pose_pub;
 
 class ImageGrabber
 {
@@ -44,11 +47,36 @@ public:
     ORB_SLAM3::System* mpSLAM;
     bool do_rectify;
     cv::Mat M1l,M2l,M1r,M2r;
+
 };
+
+void setup_publishers(ros::NodeHandle &node_handler)
+{
+    pose_pub = node_handler.advertise<geometry_msgs::PoseStamped>("/orbslam3/camera_pose", 1);
+}
+
+void publish_camera_pose(Sophus::SE3f Twc, ros::Time msg_time, std::string world_frame_id)
+
+{
+    geometry_msgs::PoseStamped pose_msg;
+    pose_msg.header.frame_id = world_frame_id;
+    pose_msg.header.stamp = msg_time;
+
+    pose_msg.pose.position.x = Twc.translation().x();
+    pose_msg.pose.position.y = Twc.translation().y();
+    pose_msg.pose.position.z = Twc.translation().z();
+
+    pose_msg.pose.orientation.w = Twc.unit_quaternion().coeffs().w();
+    pose_msg.pose.orientation.x = Twc.unit_quaternion().coeffs().x();
+    pose_msg.pose.orientation.y = Twc.unit_quaternion().coeffs().y();
+    pose_msg.pose.orientation.z = Twc.unit_quaternion().coeffs().z();
+
+    pose_pub.publish(pose_msg);
+}
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "RGBD");
+    ros::init(argc, argv, "orb_slam_stereo");
     ros::start();
 
     if(argc != 4)
@@ -110,6 +138,7 @@ int main(int argc, char **argv)
     }
 
     ros::NodeHandle nh;
+    setup_publishers(nh);
 
     message_filters::Subscriber<sensor_msgs::Image> left_sub(nh, "/camera/infra1/image_rect_raw", 1);
     message_filters::Subscriber<sensor_msgs::Image> right_sub(nh, "/camera/infra2/image_rect_raw", 1);
@@ -134,6 +163,9 @@ int main(int argc, char **argv)
 
 void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,const sensor_msgs::ImageConstPtr& msgRight)
 {
+    ros::Time msg_time = msgLeft->header.stamp;
+    Sophus::SE3f Tcw;
+
     // Copy the ros image message to cv::Mat.
     cv_bridge::CvImageConstPtr cv_ptrLeft;
     try
@@ -156,18 +188,30 @@ void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,const se
         ROS_ERROR("cv_bridge exception: %s", e.what());
         return;
     }
-
     if(do_rectify)
     {
         cv::Mat imLeft, imRight;
         cv::remap(cv_ptrLeft->image,imLeft,M1l,M2l,cv::INTER_LINEAR);
         cv::remap(cv_ptrRight->image,imRight,M1r,M2r,cv::INTER_LINEAR);
-        mpSLAM->TrackStereo(imLeft,imRight,cv_ptrLeft->header.stamp.toSec());
+        Tcw = mpSLAM->TrackStereo(imLeft,imRight,cv_ptrLeft->header.stamp.toSec());
     }
     else
     {
-        mpSLAM->TrackStereo(cv_ptrLeft->image,cv_ptrRight->image,cv_ptrLeft->header.stamp.toSec());
+        Tcw = mpSLAM->TrackStereo(cv_ptrLeft->image,cv_ptrRight->image,cv_ptrLeft->header.stamp.toSec());
     }
+    // publish_topics(msg_time);
+    // std::cout << "Tcw: " << Tcw.translation().x() << " " << Tcw.translation().y() << " " << Tcw.translation().z() << std::endl;
+    Sophus::SE3f Twc = Tcw.inverse();
+    // std::cout << "Twc: " << Twc.translation().x() << " " << Twc.translation().y() << " " << Twc.translation().z() << std::endl;
+    // print euler
+    Eigen::Vector3f euler = Twc.so3().log();
+    euler.y() = euler.y() - 3.14159265358979323846/2.2; // face z direction
+    // rotate matrix from the new eulers
+    Twc.so3() = Sophus::SO3f::exp(euler);
+    // std::cout << "euler: " << euler.x() << " " << euler.y() << " " << euler.z() << std::endl;
+
+    publish_camera_pose(Twc, msg_time, msgLeft->header.frame_id);
+    // publish_camera_pose(Twc, msg_time, "camera_infra1_frame");
 
 }
 
