@@ -1,12 +1,14 @@
 echo "Configuring and building Thirdparty/DBoW2 ..."
 
 cd Thirdparty/DBoW2
+rm -r build
 mkdir build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j
 
 cd ../../g2o
+rm -r build
 
 echo "Configuring and building Thirdparty/g2o ..."
 
@@ -16,6 +18,7 @@ cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j
 
 cd ../../Sophus
+rm -r build
 
 echo "Configuring and building Thirdparty/Sophus ..."
 
@@ -33,6 +36,7 @@ tar -xf ORBvoc.txt.tar.gz
 cd ..
 
 echo "Configuring and building ORB_SLAM3 ..."
+rm -r build
 
 mkdir build
 cd build

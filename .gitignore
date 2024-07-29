@@ -1,3 +1,4 @@
+
 # Ignore all
 *
 
@@ -12,6 +13,9 @@ CMakeLists_modified.txt
 
 Examples/RGB-D/rgbd_tum
 Examples/RGB-D/rgbd_realsense_D435i
+Examples/RGB-D/CMakeFiles/
+Examples/RGB-D/CMakeCache.txt
+Examples/RGB-D/cmake_install.cmake
 
 Examples/RGB-D-Inertial/rgbd_inertial_realsense_D435i
 
@@ -56,6 +60,9 @@ Examples/ROS/ORB_SLAM3/CMakeLists.txt.user
 Examples/ROS/ORB_SLAM3/build/
 
 KeyFrameTrajectory.txt
+FrameTrajectory_KITTI_Format.txt
+FrameTrajectory_TUM_Format.txt
+KeyFrameTrajectory_TUM_Format.txt
 CameraTrajectory.txt
 kf_*.txt
 f_*.txt
