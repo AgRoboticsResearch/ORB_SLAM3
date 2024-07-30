@@ -205,7 +205,7 @@ void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,const se
     // std::cout << "Twc: " << Twc.translation().x() << " " << Twc.translation().y() << " " << Twc.translation().z() << std::endl;
     // print euler
     Eigen::Vector3f euler = Twc.so3().log();
-    euler.y() = euler.y() - 3.14159265358979323846/2; // face z direction
+    euler.y() = euler.y() - 3.14159265358979323846/2.0; // face z direction
     // rotate matrix from the new eulers
     Twc.so3() = Sophus::SO3f::exp(euler);
     // std::cout << "euler: " << euler.x() << " " << euler.y() << " " << euler.z() << std::endl;
