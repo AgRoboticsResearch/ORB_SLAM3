@@ -725,6 +725,27 @@ bool Tracking::ParseCamParamFile(cv::FileStorage &fSettings)
             mDistCoef.at<float>(4) = node.real();
         }
 
+        node = fSettings["Camera.k4"];
+        if(!node.empty() && node.isReal())
+        {
+            mDistCoef.resize(6);
+            mDistCoef.at<float>(5) = node.real();
+        }
+
+        node = fSettings["Camera.k5"];
+        if(!node.empty() && node.isReal())
+        {
+            mDistCoef.resize(7);
+            mDistCoef.at<float>(6) = node.real();
+        }
+
+        node = fSettings["Camera.k6"];
+        if(!node.empty() && node.isReal())
+        {
+            mDistCoef.resize(8);
+            mDistCoef.at<float>(7) = node.real();
+        }
+
         node = fSettings["Camera.imageScale"];
         if(!node.empty() && node.isReal())
         {
@@ -766,6 +787,12 @@ bool Tracking::ParseCamParamFile(cv::FileStorage &fSettings)
 
         if(mDistCoef.rows==5)
             std::cout << "- k3: " << mDistCoef.at<float>(4) << std::endl;
+
+        if(mDistCoef.rows==8)
+            std::cout << "- k3: " << mDistCoef.at<float>(4) << std::endl;
+            std::cout << "- k4: " << mDistCoef.at<float>(5) << std::endl;
+            std::cout << "- k5: " << mDistCoef.at<float>(6) << std::endl;
+            std::cout << "- k6: " << mDistCoef.at<float>(7) << std::endl;
 
         mK = cv::Mat::eye(3,3,CV_32F);
         mK.at<float>(0,0) = fx;
