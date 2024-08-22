@@ -44,6 +44,7 @@ int main(int argc, char **argv)
     vector<string> vstrImageRight;
     vector<double> vTimestamps;
     LoadImages(string(argv[3]), vstrImageLeft, vstrImageRight, vTimestamps);
+    string path_to_sequence = string(argv[3]);
 
     const int nImages = vstrImageLeft.size();
 
@@ -56,7 +57,7 @@ int main(int argc, char **argv)
     vTimesTrack.resize(nImages);
 
     cout << endl << "-------" << endl;
-    cout << "Start processing sequence ..." << endl;
+    cout << "Start processing sequence ... " << path_to_sequence <<endl;
     cout << "Images in the sequence: " << nImages << endl << endl;   
 
     double t_track = 0.f;
@@ -66,6 +67,9 @@ int main(int argc, char **argv)
     cv::Mat imLeft, imRight;
     for(int ni=0; ni<nImages; ni++)
     {
+        // std::cout << "left path: " << vstrImageLeft[ni] << std::endl;
+        // std::cout << "right path: " << vstrImageRight[ni] << std::endl;
+
         // Read left and right images from file
         imLeft = cv::imread(vstrImageLeft[ni],cv::IMREAD_UNCHANGED); //,cv::IMREAD_UNCHANGED);
         imRight = cv::imread(vstrImageRight[ni],cv::IMREAD_UNCHANGED); //,cv::IMREAD_UNCHANGED);
@@ -152,7 +156,7 @@ int main(int argc, char **argv)
     cout << "mean tracking time: " << totaltime/nImages << endl;
 
     // Save camera trajectory
-    SLAM.SaveTrajectoryKITTI("CameraTrajectory.txt");
+    SLAM.SaveTrajectoryKITTI(path_to_sequence + "/CameraTrajectory.txt");
 
     return 0;
 }
@@ -177,8 +181,8 @@ void LoadImages(const string &strPathToSequence, vector<string> &vstrImageLeft,
         }
     }
 
-    string strPrefixLeft = strPathToSequence + "/image_0/";
-    string strPrefixRight = strPathToSequence + "/image_1/";
+    string strPrefixLeft = strPathToSequence + "/rgb_left_";
+    string strPrefixRight = strPathToSequence + "/rgb_right_";
 
     const int nTimes = vTimestamps.size();
     vstrImageLeft.resize(nTimes);
