@@ -181,8 +181,8 @@ void LoadImages(const string &strPathToSequence, vector<string> &vstrImageLeft,
         }
     }
 
-    string strPrefixLeft = strPathToSequence + "/rgb_left_";
-    string strPrefixRight = strPathToSequence + "/rgb_right_";
+    string strPrefixLeft = strPathToSequence + "/left_";
+    string strPrefixRight = strPathToSequence + "/right_";
 
     const int nTimes = vTimestamps.size();
     vstrImageLeft.resize(nTimes);
