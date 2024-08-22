@@ -8,6 +8,7 @@ import argparse
 def main(bag_path, save_folder, camera_type, compressed, depth):
     bag = rosbag.Bag(bag_path)
     msgReaders.print_bag_topics(bag)
+    save_folder = save_folder + os.path.basename(bag_path).replace(".bag", "") + "/"
 
     if camera_type == "oak":
         prefix = "/oak"
@@ -22,10 +23,10 @@ def main(bag_path, save_folder, camera_type, compressed, depth):
         prefix = "/camera"
         depth_cam_info_topic = prefix + "/aligned_depth_to_color/camera_info"
         depth_topic = "/aligned_depth_to_color/image_raw"
-        right_cam_topic = prefix + "/infra1/image_rect_raw" + ("/compressed" if compressed else "")
-        left_cam_topic = prefix + "/infra2/image_rect_raw" + ("/compressed" if compressed else "")
-        right_camera_info_topic = prefix + "/infra1/camera_info"
-        left_camera_info_topic = prefix + "/infra2/camera_info"
+        right_cam_topic = prefix + "/infra2/image_rect_raw" + ("/compressed" if compressed else "")
+        left_cam_topic = prefix + "/infra1/image_rect_raw" + ("/compressed" if compressed else "")
+        right_camera_info_topic = prefix + "/infra2/camera_info"
+        left_camera_info_topic = prefix + "/infra1/camera_info"
 
     else:
         print("Invalid camera type, need to be oak or realsense_d435i")
@@ -48,23 +49,27 @@ def main(bag_path, save_folder, camera_type, compressed, depth):
 
 
     # Sync timelist
-    # left_cam_timelist_synced, right_cam_timelist_synced = msgReaders.sync_msgs([left_cam_timelist, right_cam_timelist])
-    # right_cam_timelist_ros_synced = [right_cam_timelist_ros[i] for i in (right_cam_timelist_synced[:, 1].astype(dtype=int))]
-    # left_cam_timelist_ros_synced = [left_cam_timelist_ros[i] for i in (left_cam_timelist_synced[:, 1].astype(dtype=int))]
+    if depth:
+        left_cam_timelist_synced, right_cam_timelist_synced, depth_timelist_synced = msgReaders.sync_msgs([left_cam_timelist, right_cam_timelist, depth_timelist])
+        right_cam_timelist_ros_synced = [right_cam_timelist_ros[i] for i in (right_cam_timelist_synced[:, 1].astype(dtype=int))]
+        left_cam_timelist_ros_synced = [left_cam_timelist_ros[i] for i in (left_cam_timelist_synced[:, 1].astype(dtype=int))]
+        depth_timelist_ros_synced = [depth_timelist_ros[i] for i in (depth_timelist_synced[:, 1].astype(dtype=int))]
 
-    left_cam_timelist_synced, right_cam_timelist_synced, depth_timelist_synced = msgReaders.sync_msgs([left_cam_timelist, right_cam_timelist, depth_timelist])
-    right_cam_timelist_ros_synced = [right_cam_timelist_ros[i] for i in (right_cam_timelist_synced[:, 1].astype(dtype=int))]
-    left_cam_timelist_ros_synced = [left_cam_timelist_ros[i] for i in (left_cam_timelist_synced[:, 1].astype(dtype=int))]
-    depth_timelist_ros_synced = [depth_timelist_ros[i] for i in (depth_timelist_synced[:, 1].astype(dtype=int))]
+        right_cam_timelist_synced = [right_cam_timelist[i] for i in (right_cam_timelist_synced[:, 1].astype(dtype=int))]
+        left_cam_timelist_synced = [left_cam_timelist[i] for i in (left_cam_timelist_synced[:, 1].astype(dtype=int))]
+        depth_timelist_synced = [depth_timelist[i] for i in (depth_timelist_synced[:, 1].astype(dtype=int))]
+        print("depth_timelist_ros_synced: ", len(depth_timelist_ros_synced))
 
-    right_cam_timelist_synced = [right_cam_timelist[i] for i in (right_cam_timelist_synced[:, 1].astype(dtype=int))]
-    left_cam_timelist_synced = [left_cam_timelist[i] for i in (left_cam_timelist_synced[:, 1].astype(dtype=int))]
-    depth_timelist_synced = [depth_timelist[i] for i in (depth_timelist_synced[:, 1].astype(dtype=int))]
+    else:
+        left_cam_timelist_synced, right_cam_timelist_synced = msgReaders.sync_msgs([left_cam_timelist, right_cam_timelist])
+        right_cam_timelist_ros_synced = [right_cam_timelist_ros[i] for i in (right_cam_timelist_synced[:, 1].astype(dtype=int))]
+        left_cam_timelist_ros_synced = [left_cam_timelist_ros[i] for i in (left_cam_timelist_synced[:, 1].astype(dtype=int))]
 
+        right_cam_timelist_synced = [right_cam_timelist[i] for i in (right_cam_timelist_synced[:, 1].astype(dtype=int))]
+        left_cam_timelist_synced = [left_cam_timelist[i] for i in (left_cam_timelist_synced[:, 1].astype(dtype=int))]
 
     print("right_cam_timelist_ros_synced: ", len(right_cam_timelist_ros_synced))
     print("left_cam_timelist_ros_synced: ", len(left_cam_timelist_ros_synced))
-    print("depth_timelist_ros_synced: ", len(depth_timelist_ros_synced))
     # check if save folder exsit and create if not
     if not os.path.exists(save_folder):
         os.makedirs(save_folder)
@@ -85,13 +90,13 @@ def main(bag_path, save_folder, camera_type, compressed, depth):
             left_cam_image = msgReaders.retrive_image(idx, bag, left_cam_timelist_ros_synced, left_cam_topic, compressed=True)
             # left_cam_image = cv2.cvtColor(left_cam_image, cv2.COLOR_BGR2RGB)
 
-            depth_image = msgReaders.retrive_image(idx, bag, depth_timelist_ros_synced, depth_topic)
-
-
             # save 
             cv2.imwrite(save_folder + "right_%06i.png" % idx, right_cam_image)
             cv2.imwrite(save_folder + "left_%06i.png" % idx, left_cam_image)
-            cv2.imwrite(save_folder + "depth_%06i.png" % idx, depth_image)
+
+            if depth:
+                depth_image = msgReaders.retrive_image(idx, bag, depth_timelist_ros_synced, depth_topic)
+                cv2.imwrite(save_folder + "depth_%06i.png" % idx, depth_image)
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Process your script's arguments")
@@ -110,3 +115,4 @@ if __name__ == "__main__":
     print(f"camera_type: {args.camera_type}")
     print(f"compressed: {args.compressed}")
     print(f"depth: {args.depth}")
+    main(args.bag_path, args.save_folder, args.camera_type, args.compressed, args.depth)
