@@ -5,6 +5,8 @@ temp/
 
 # Unignore all with extensions
 !*.*
+!Dockerfile
+!.dockerignore
 
 # Unignore all dirs
 !*/

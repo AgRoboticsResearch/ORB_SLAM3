@@ -1,0 +1,7 @@
+build/
+Thirdparty/DBoW2/build/
+Thirdparty/g2o/build/
+Thirdparty/Sophus/build/
+Vocabulary/ORBvoc.txt
+Examples/ROS/ORB_SLAM3/build/
+.git/
